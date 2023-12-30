@@ -1,3 +1,3 @@
 # terminal-game
 
-only an idiot would wanna play a terminal pinball alike with multiplayer funtionality...right?
+only an idiot would wanna play a terminal chess & pinball alike with multiplayer funtionality

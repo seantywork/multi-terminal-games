@@ -5,7 +5,7 @@ project(basic_grpc)
 include(common.cmake)
 
 # Proto file
-get_filename_component(hw_proto "protobuf/helloworld.proto" ABSOLUTE)
+get_filename_component(hw_proto "proto/helloworld.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
 
 # Generated sources
@@ -37,12 +37,27 @@ target_link_libraries(hw_grpc_proto
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
-# Targets greeter_[async_](client|server)
+# Targets terminal
 foreach(_target
-  greeter_client greeter_server
-  greeter_callback_client greeter_callback_server
-  greeter_async_client greeter_async_client2 greeter_async_server)
-  add_executable(${_target} "${_target}.cc")
+  greeter_client
+  greeter_callback_client
+  greeter_async_client greeter_async_client2)
+  add_executable(${_target} "term/${_target}.cc")
+  target_link_libraries(${_target}
+    hw_grpc_proto
+    absl::flags
+    absl::flags_parse
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+endforeach()
+
+# Target game
+foreach(_target
+  greeter_server
+  greeter_callback_server
+  greeter_async_server)
+  add_executable(${_target} "game/${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
     absl::flags

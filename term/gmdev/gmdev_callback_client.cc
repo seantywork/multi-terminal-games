@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2021 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
  *
  */
 
+#include <condition_variable>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "absl/flags/flag.h"
@@ -26,9 +28,9 @@
 #include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/helloworld.grpc.pb.h"
+#include "examples/protos/gmdev.grpc.pb.h"
 #else
-#include "helloworld.grpc.pb.h"
+#include "gmdev.grpc.pb.h"
 #endif
 
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
@@ -36,9 +38,9 @@ ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using helloworld::Greeter;
-using helloworld::HelloReply;
-using helloworld::HelloRequest;
+using gmdev::Greeter;
+using gmdev::HelloReply;
+using gmdev::HelloRequest;
 
 class GreeterClient {
  public:
@@ -60,7 +62,22 @@ class GreeterClient {
     ClientContext context;
 
     // The actual RPC.
-    Status status = stub_->SayHello(&context, request, &reply);
+    std::mutex mu;
+    std::condition_variable cv;
+    bool done = false;
+    Status status;
+    stub_->async()->SayHello(&context, &request, &reply,
+                             [&mu, &cv, &done, &status](Status s) {
+                               status = std::move(s);
+                               std::lock_guard<std::mutex> lock(mu);
+                               done = true;
+                               cv.notify_one();
+                             });
+
+    std::unique_lock<std::mutex> lock(mu);
+    while (!done) {
+      cv.wait(lock);
+    }
 
     // Act upon its status.
     if (status.ok()) {
