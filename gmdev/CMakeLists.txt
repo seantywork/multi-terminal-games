@@ -42,7 +42,7 @@ foreach(_target
   gmdev_client
   gmdev_callback_client
   gmdev_async_client gmdev_async_client2)
-  add_executable(${_target} "../term/gmdev/${_target}.cc")
+  add_executable(${_target} "../terminal/gmdev/${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
     absl::flags
@@ -57,7 +57,7 @@ foreach(_target
   gmdev_server
   gmdev_callback_server
   gmdev_async_server)
-  add_executable(${_target} "../game/gmdev/${_target}.cc")
+  add_executable(${_target} "../multigames/gmdev/${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
     absl::flags

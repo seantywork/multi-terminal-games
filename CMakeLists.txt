@@ -42,7 +42,7 @@ foreach(_target
   greeter_client
   greeter_callback_client
   greeter_async_client greeter_async_client2)
-  add_executable(${_target} "term/${_target}.cc")
+  add_executable(${_target} "terminal/${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
     absl::flags
@@ -57,7 +57,7 @@ foreach(_target
   greeter_server
   greeter_callback_server
   greeter_async_server)
-  add_executable(${_target} "game/${_target}.cc")
+  add_executable(${_target} "multigames/${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
     absl::flags
