@@ -28,9 +28,9 @@
 #include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/gmdev.grpc.pb.h"
+#include "examples/protos/mtgms.grpc.pb.h"
 #else
-#include "gmdev.grpc.pb.h"
+#include "mtgms.grpc.pb.h"
 #endif
 
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
@@ -40,9 +40,9 @@ using grpc::ClientAsyncResponseReader;
 using grpc::ClientContext;
 using grpc::CompletionQueue;
 using grpc::Status;
-using gmdev::Greeter;
-using gmdev::HelloReply;
-using gmdev::HelloRequest;
+using mtgms::Greeter;
+using mtgms::HelloReply;
+using mtgms::HelloRequest;
 
 class GreeterClient {
  public:

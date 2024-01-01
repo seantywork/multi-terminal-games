@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021 gRPC authors.
+ * Copyright 2015 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,33 +29,28 @@
 #include <grpcpp/health_check_service_interface.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/gmdev.grpc.pb.h"
+#include "examples/protos/chess.grpc.pb.h"
 #else
-#include "gmdev.grpc.pb.h"
+#include "chess.grpc.pb.h"
 #endif
+
+using grpc::Server;
+using grpc::ServerBuilder;
+using grpc::ServerContext;
+using grpc::Status;
+using chess::Greeter;
+using chess::HelloReply;
+using chess::HelloRequest;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-using grpc::CallbackServerContext;
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerUnaryReactor;
-using grpc::Status;
-using gmdev::Greeter;
-using gmdev::HelloReply;
-using gmdev::HelloRequest;
-
 // Logic and data behind the server's behavior.
-class GreeterServiceImpl final : public Greeter::CallbackService {
-  ServerUnaryReactor* SayHello(CallbackServerContext* context,
-                               const HelloRequest* request,
-                               HelloReply* reply) override {
+class GreeterServiceImpl final : public Greeter::Service {
+  Status SayHello(ServerContext* context, const HelloRequest* request,
+                  HelloReply* reply) override {
     std::string prefix("Hello ");
     reply->set_message(prefix + request->name());
-
-    ServerUnaryReactor* reactor = context->DefaultReactor();
-    reactor->Finish(Status::OK);
-    return reactor;
+    return Status::OK;
   }
 };
 

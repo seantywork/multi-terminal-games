@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021 gRPC authors.
+ * Copyright 2015 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,36 @@
  *
  */
 
-#include <condition_variable>
 #include <iostream>
 #include <memory>
-#include <mutex>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 
+#include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/gmdev.grpc.pb.h"
+#include "examples/protos/mtgms.grpc.pb.h"
 #else
-#include "gmdev.grpc.pb.h"
+#include "mtgms.grpc.pb.h"
 #endif
 
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
 
 using grpc::Channel;
+using grpc::ClientAsyncResponseReader;
 using grpc::ClientContext;
+using grpc::CompletionQueue;
 using grpc::Status;
-using gmdev::Greeter;
-using gmdev::HelloReply;
-using gmdev::HelloRequest;
+using mtgms::Greeter;
+using mtgms::HelloReply;
+using mtgms::HelloRequest;
 
 class GreeterClient {
  public:
-  GreeterClient(std::shared_ptr<Channel> channel)
+  explicit GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
   // Assembles the client's payload, sends it and presents the response back
@@ -61,35 +62,45 @@ class GreeterClient {
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
-    // The actual RPC.
-    std::mutex mu;
-    std::condition_variable cv;
-    bool done = false;
+    // The producer-consumer queue we use to communicate asynchronously with the
+    // gRPC runtime.
+    CompletionQueue cq;
+
+    // Storage for the status of the RPC upon completion.
     Status status;
-    stub_->async()->SayHello(&context, &request, &reply,
-                             [&mu, &cv, &done, &status](Status s) {
-                               status = std::move(s);
-                               std::lock_guard<std::mutex> lock(mu);
-                               done = true;
-                               cv.notify_one();
-                             });
 
-    std::unique_lock<std::mutex> lock(mu);
-    while (!done) {
-      cv.wait(lock);
-    }
+    std::unique_ptr<ClientAsyncResponseReader<HelloReply> > rpc(
+        stub_->AsyncSayHello(&context, request, &cq));
 
-    // Act upon its status.
+    // Request that, upon completion of the RPC, "reply" be updated with the
+    // server's response; "status" with the indication of whether the operation
+    // was successful. Tag the request with the integer 1.
+    rpc->Finish(&reply, &status, (void*)1);
+    void* got_tag;
+    bool ok = false;
+    // Block until the next result is available in the completion queue "cq".
+    // The return value of Next should always be checked. This return value
+    // tells us whether there is any kind of event or the cq_ is shutting down.
+    GPR_ASSERT(cq.Next(&got_tag, &ok));
+
+    // Verify that the result from "cq" corresponds, by its tag, our previous
+    // request.
+    GPR_ASSERT(got_tag == (void*)1);
+    // ... and that the request was completed successfully. Note that "ok"
+    // corresponds solely to the request for updates introduced by Finish().
+    GPR_ASSERT(ok);
+
+    // Act upon the status of the actual RPC.
     if (status.ok()) {
       return reply.message();
     } else {
-      std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
       return "RPC failed";
     }
   }
 
  private:
+  // Out of the passed in Channel comes the stub, stored here, our view of the
+  // server's exposed services.
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
@@ -104,7 +115,8 @@ int main(int argc, char** argv) {
   GreeterClient greeter(
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
   std::string user("world");
-  std::string reply = greeter.SayHello(user);
+  std::string reply = greeter.SayHello(user);  // The actual RPC call!
+
   std::cout << "Greeter received: " << reply << std::endl;
 
   return 0;

@@ -1,2 +1,6 @@
 grpc
 build
+*.o
+*.out
+*.a
+*.so
