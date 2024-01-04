@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmtgms_grpc_proto.a CMakeFiles/mtgms_grpc_proto.dir/mtgms.grpc.pb.cc.o CMakeFiles/mtgms_grpc_proto.dir/mtgms.pb.cc.o
+/usr/bin/ranlib libmtgms_grpc_proto.a

@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+823fae672fe3390c7dc8928b8d950910 mtgms.pb.cc

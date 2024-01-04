@@ -1,0 +1,10 @@
+/home/seantywork/main/multi-terminal-games/cmake/mtgms/build/CMakeFiles/mtgms_grpc_proto.dir
+/home/seantywork/main/multi-terminal-games/cmake/mtgms/build/CMakeFiles/mtgms_client.dir
+/home/seantywork/main/multi-terminal-games/cmake/mtgms/build/CMakeFiles/mtgms_callback_client.dir
+/home/seantywork/main/multi-terminal-games/cmake/mtgms/build/CMakeFiles/mtgms_async_client.dir
+/home/seantywork/main/multi-terminal-games/cmake/mtgms/build/CMakeFiles/mtgms_async_client2.dir
+/home/seantywork/main/multi-terminal-games/cmake/mtgms/build/CMakeFiles/mtgms_server.dir
+/home/seantywork/main/multi-terminal-games/cmake/mtgms/build/CMakeFiles/mtgms_callback_server.dir
+/home/seantywork/main/multi-terminal-games/cmake/mtgms/build/CMakeFiles/mtgms_async_server.dir
+/home/seantywork/main/multi-terminal-games/cmake/mtgms/build/CMakeFiles/edit_cache.dir
+/home/seantywork/main/multi-terminal-games/cmake/mtgms/build/CMakeFiles/rebuild_cache.dir
