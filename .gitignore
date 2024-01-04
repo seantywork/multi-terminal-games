@@ -1,5 +1,4 @@
 grpc
-*/build
 *.o
 *.out
 *.a
