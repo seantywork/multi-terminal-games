@@ -94,12 +94,12 @@ if(STANDALONE_GAME)
       ${_PROTOBUF_LIBPROTOBUF})
   endforeach()
 
-elseif(PROTO_ONLY)
+elseif(BUILD_DEV)
 
 
   cmake_minimum_required(VERSION 3.8)
 
-  project(chess_proto_only)
+  project(chess_build_dev)
 
   include(../common.cmake)
 
@@ -137,11 +137,11 @@ elseif(PROTO_ONLY)
     ${_PROTOBUF_LIBPROTOBUF})
 
 
-elseif(PROTO_ONLY_THEN)
+elseif(BUILD_DEV_THEN)
 
   cmake_minimum_required(VERSION 3.8)
 
-  project(chess_proto_only_then)
+  project(chess_build_dev)
 
   include(../common.cmake)
 
@@ -181,6 +181,71 @@ elseif(PROTO_ONLY_THEN)
       ${_PROTOBUF_LIBPROTOBUF})
   endforeach() 
     
+
+elseif(BUILD_SAMPLE)
+
+
+  cmake_minimum_required(VERSION 3.8)
+
+  project(chess_build_sample)
+
+  include(../common.cmake)
+
+  # Proto file
+  get_filename_component(chess_proto "../../proto/chess.proto" ABSOLUTE)
+  get_filename_component(chess_proto_path "${chess_proto}" PATH)
+
+  # Generated sources
+  set(chess_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.pb.cc")
+  set(chess_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.pb.h")
+  add_custom_command(
+        OUTPUT "${chess_proto_srcs}" "${chess_proto_hdrs}" "${chess_grpc_srcs}" "${chess_grpc_hdrs}"
+        COMMAND ${_PROTOBUF_PROTOC}
+        ARGS 
+          --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+          -I "${chess_proto_path}"
+          "${chess_proto}"
+        DEPENDS "${chess_proto}")
+
+  # Include generated *.pb.h files
+  include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+
+  # chess_proto
+  add_library(chess_proto
+    ${chess_proto_srcs}
+    ${chess_proto_hdrs})
+  target_link_libraries(chess_proto
+    ${_PROTOBUF_LIBPROTOBUF})
+
+
+elseif(BUILD_SAMPLE_THEN)
+
+  cmake_minimum_required(VERSION 3.8)
+
+  project(chess_build_sample)
+
+  include(../common.cmake)
+
+
+  include_directories(
+    ./sample
+    )
+
+
+  link_directories( 
+    ./sample
+    )
+
+  # Targets terminal
+  foreach(_target
+    chess_sample)
+    add_executable(${_target} "./${_target}.cc")
+    target_link_libraries(${_target}
+      chess_proto
+      ${_PROTOBUF_LIBPROTOBUF})
+  endforeach()
+
+
 else() # If STANDALONE_GAME is not set
 
 

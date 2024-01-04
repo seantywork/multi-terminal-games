@@ -1,3 +1,5 @@
 build
-build_proto
-build_proto_then
+dev
+dev_then
+sample
+sample_then

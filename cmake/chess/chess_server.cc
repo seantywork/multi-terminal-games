@@ -35,6 +35,7 @@ class ChessServiceImpl final: public Chess::Service{
         
         int piece_id = request->id();
         std::string to = request->to();
+        MoveResult mr = request->result();
 
         
 
