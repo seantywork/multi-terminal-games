@@ -6,15 +6,14 @@
 #include <iomanip>
 #include <ctime>
 
-#include "chess.pb.h"
+#include "chess.v0.pb.h"
 
-
-using chess::PIECES;
-using chess::Test;
-using chess::Void;
-using chess::Move;
-using chess::MoveResult;
-using chess::MoveHistory;
+using gmchess::PIECES;
+using gmchess::Test;
+using gmchess::Void;
+using gmchess::Move;
+using gmchess::MoveResult;
+using gmchess::MoveHistory;
 
 
 std::string GetStringTimeNow(){

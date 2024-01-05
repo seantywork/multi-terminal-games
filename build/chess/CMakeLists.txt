@@ -7,14 +7,14 @@ if(STANDALONE_GAME)
   include(../common.cmake)
 
   # Proto file
-  get_filename_component(chess_proto "../../proto/chess.proto" ABSOLUTE)
+  get_filename_component(chess_proto "../../proto/chess.v1.proto" ABSOLUTE)
   get_filename_component(chess_proto_path "${chess_proto}" PATH)
 
   # Generated sources
-  set(chess_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.pb.cc")
-  set(chess_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.pb.h")
-  set(chess_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.grpc.pb.cc")
-  set(chess_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.grpc.pb.h")
+  set(chess_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.v1.pb.cc")
+  set(chess_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.v1.pb.h")
+  set(chess_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.v1.grpc.pb.cc")
+  set(chess_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.v1.grpc.pb.h")
   add_custom_command(
         OUTPUT "${chess_proto_srcs}" "${chess_proto_hdrs}" "${chess_grpc_srcs}" "${chess_grpc_hdrs}"
         COMMAND ${_PROTOBUF_PROTOC}
@@ -104,14 +104,14 @@ elseif(BUILD_DEV)
   include(../common.cmake)
 
   # Proto file
-  get_filename_component(chess_proto "../../proto/chess.proto" ABSOLUTE)
+  get_filename_component(chess_proto "../../proto/chess.v1.proto" ABSOLUTE)
   get_filename_component(chess_proto_path "${chess_proto}" PATH)
 
   # Generated sources
-  set(chess_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.pb.cc")
-  set(chess_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.pb.h")
-  set(chess_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.grpc.pb.cc")
-  set(chess_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.grpc.pb.h")
+  set(chess_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.v1.pb.cc")
+  set(chess_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.v1.pb.h")
+  set(chess_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.v1.grpc.pb.cc")
+  set(chess_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.v1.grpc.pb.h")
   add_custom_command(
         OUTPUT "${chess_proto_srcs}" "${chess_proto_hdrs}" "${chess_grpc_srcs}" "${chess_grpc_hdrs}"
         COMMAND ${_PROTOBUF_PROTOC}
@@ -147,18 +147,18 @@ elseif(BUILD_DEV_THEN)
 
 
   include_directories(
-    ./build_proto
+    ./dev
     )
 
 
   link_directories( 
-    ./build_proto
+    ./dev
     )
 
   # Targets terminal
   foreach(_target
     chess_client)
-    add_executable(${_target} "./${_target}.cc")
+    add_executable(${_target} "../../terminal/chess/${_target}.cc")
     target_link_libraries(${_target}
       chess_grpc_proto
       absl::flags
@@ -171,7 +171,7 @@ elseif(BUILD_DEV_THEN)
   # Target game
   foreach(_target
     chess_server)
-    add_executable(${_target} "./${_target}.cc")
+    add_executable(${_target} "../../multigames/chess/${_target}.cc")
     target_link_libraries(${_target}
       chess_grpc_proto
       absl::flags
@@ -192,12 +192,12 @@ elseif(BUILD_SAMPLE)
   include(../common.cmake)
 
   # Proto file
-  get_filename_component(chess_proto "../../proto/chess.proto" ABSOLUTE)
+  get_filename_component(chess_proto "../../proto/chess.v0.proto" ABSOLUTE)
   get_filename_component(chess_proto_path "${chess_proto}" PATH)
 
   # Generated sources
-  set(chess_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.pb.cc")
-  set(chess_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.pb.h")
+  set(chess_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/chess.v0.pb.cc")
+  set(chess_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/chess.v0.pb.h")
   add_custom_command(
         OUTPUT "${chess_proto_srcs}" "${chess_proto_hdrs}" "${chess_grpc_srcs}" "${chess_grpc_hdrs}"
         COMMAND ${_PROTOBUF_PROTOC}
@@ -239,7 +239,7 @@ elseif(BUILD_SAMPLE_THEN)
   # Targets terminal
   foreach(_target
     chess_sample)
-    add_executable(${_target} "./${_target}.cc")
+    add_executable(${_target} "../../sample/${_target}.cc")
     target_link_libraries(${_target}
       chess_proto
       ${_PROTOBUF_LIBPROTOBUF})

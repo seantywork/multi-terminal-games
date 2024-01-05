@@ -1,24 +1,12 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
+
+#include <fstream>
+#include <iomanip>
+#include <ctime>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -28,54 +16,170 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 
-#ifdef BAZEL_BUILD
-#include "examples/protos/chess.grpc.pb.h"
-#else
-#include "chess.grpc.pb.h"
-#endif
+#include "chess.v1.grpc.pb.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using chess::Greeter;
-using chess::HelloReply;
-using chess::HelloRequest;
 
-ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
+using gmchess::GameChess;
 
-// Logic and data behind the server's behavior.
-class GreeterServiceImpl final : public Greeter::Service {
-  Status SayHello(ServerContext* context, const HelloRequest* request,
-                  HelloReply* reply) override {
-    std::string prefix("Hello ");
-    reply->set_message(prefix + request->name());
-    return Status::OK;
+using gmchess::PIECES;
+using gmchess::Void;
+using gmchess::Move;
+using gmchess::MoveRecord;
+using gmchess::MoveResult;
+using gmchess::MoveHistory;
+
+ABSL_FLAG(uint16_t, port, 5005, "Server port for the chess service");
+
+std::string GetStringTimeNow(){
+
+
+
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    std::string ts = oss.str();
+
+
+    return ts;
+
+}
+
+
+
+void PrintReqMove(Move* mv){
+
+
+  int piece_id = mv->id();
+  std::string to = mv->to();
+
+  std::cout<< "client piece id: " << piece_id << std::endl;
+  std::cout<< "client move: " << to << std::endl;
+
+}
+
+void SetMoveResult(MoveResult* mr){
+
+  mr->set_success(true);
+  mr->set_resolve_time_stamp(GetStringTimeNow());
+
+}
+
+
+void SetMoveRecord(MoveRecord* mrec, Move* mv, MoveResult* mr){
+
+  int step = 0;
+  PIECES id = mv->id();
+  std::string to = mv->to();
+
+  mrec->set_step(step);
+  mrec->set_id(id);
+  mrec->set_to(to);
+  *mrec->mutable_result() = *mr;
+
+}
+
+
+int AddToMoveHistory(MoveRecord* mrec){
+
+
+  MoveHistory mhist;
+
+  std::string bin_path = "bin/history.bin";
+
+  std::fstream input(bin_path, std::ios::in | std::ios::binary);
+
+  if(!input){
+    std::cout << "Creating new at: " << bin_path << std::endl; 
+  } else if (!mhist.ParseFromIstream(&input)) {
+    std::cerr << "Failed parsing from :" << bin_path << std::endl;
+    return -1;
   }
+
+  auto new_mrec = mhist.add_move_history();
+
+  new_mrec->set_step(mrec->step());
+  new_mrec->set_id(mrec->id());
+  new_mrec->set_to(mrec->to());
+  *new_mrec->mutable_result() = *mrec->mutable_result();
+
+  std::fstream output(bin_path, std::ios::out | std::ios::trunc | std::ios::binary);
+  if(!mhist.SerializeToOstream(&output)){
+    std::cerr << "Failed writing to: " << bin_path << std::endl;
+    return -1;
+  }
+
+  return 0;
+}
+
+class GameChessServiceImpl final: public GameChess::Service{
+
+    Status MakeMove(ServerContext* context, const Move* request,
+                    MoveResult* reply) override {
+
+        Move req_mv = *request;
+
+        MoveRecord mrec;
+
+        PrintReqMove(&req_mv);
+
+        SetMoveResult(reply);
+
+        std::cout << "set move result success " << std::endl; 
+
+        SetMoveRecord(&mrec, &req_mv, reply);
+
+        std::cout << "set move record success" << std::endl;
+
+        int retcode = AddToMoveHistory(&mrec);
+
+        if(retcode == 0){
+
+          std::cout << "add to move history success" << std::endl;
+
+          return Status::OK;
+
+
+        } else {
+
+          return Status::CANCELLED;
+        }
+
+    }
+
+
 };
 
-void RunServer(uint16_t port) {
+
+void RunServer(uint16_t port){
+
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
-  GreeterServiceImpl service;
+  GameChessServiceImpl service;
 
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
-  // Listen on the given address without any authentication mechanism.
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  // Register "service" as the instance through which we'll communicate with
-  // clients. In this case it corresponds to an *synchronous* service.
-  builder.RegisterService(&service);
-  // Finally assemble the server.
-  std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
 
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+
+  builder.RegisterService(&service);
+
+  std::unique_ptr<Server> server(builder.BuildAndStart());
+  std::cout << "Game Chess Server listening on " << server_address << std::endl;
+
   server->Wait();
+
 }
 
-int main(int argc, char** argv) {
+
+
+int main (int argc, char** argv){
+
   absl::ParseCommandLine(argc, argv);
   RunServer(absl::GetFlag(FLAGS_port));
   return 0;

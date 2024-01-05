@@ -1,9 +1,8 @@
-
 syntax = "proto3";
 
-package chess;
+package gmchess;
 
-service Chess {
+service GameChess {
 
   rpc MakeMove(Move) returns (MoveResult);
 
@@ -51,35 +50,34 @@ enum PIECES {
 
 message Void {}
 
-message Test {
-
-  PIECES id = 1;
-  string name = 2;
-  Move single_move = 3;
-  repeated string multiple_names = 4;
-  repeated Move multiple_moves = 5;
-
-}
-
 message Move {
 
-  PIECES id = 1;
-  string to = 2;
-  MoveResult result = 3;
+    PIECES id = 1;
+    string to = 2;
+  
+}
+  
+message MoveRecord {
+
+    int64 step = 1;
+    PIECES id = 2;
+    string to = 3;
+    MoveResult result = 4;
 
 }
+
 
 message MoveResult {
 
-  bool success = 1;
-  string resolve_time_stamp = 2;
+    bool success = 1;
+    string resolve_time_stamp = 2;
 
 }
 
 
 message MoveHistory{
 
-  repeated Move move_history = 1;
+    repeated MoveRecord move_history = 1;
 
 }
 

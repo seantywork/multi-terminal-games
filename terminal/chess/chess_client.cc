@@ -1,94 +1,86 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
+#include <condition_variable>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
+#include <mutex>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 
 #include <grpcpp/grpcpp.h>
 
-#ifdef BAZEL_BUILD
-#include "examples/protos/chess.grpc.pb.h"
-#else
-#include "chess.grpc.pb.h"
-#endif
 
-ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
+#include "chess.v1.grpc.pb.h"
+
+ABSL_FLAG(std::string, target, "localhost:5005", "Server address");
 
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using chess::Greeter;
-using chess::HelloReply;
-using chess::HelloRequest;
 
-class GreeterClient {
- public:
-  GreeterClient(std::shared_ptr<Channel> channel)
-      : stub_(Greeter::NewStub(channel)) {}
+using gmchess::GameChess;
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
-  std::string SayHello(const std::string& user) {
-    // Data we are sending to the server.
-    HelloRequest request;
-    request.set_name(user);
+using gmchess::PIECES;
+using gmchess::Void;
+using gmchess::Move;
+using gmchess::MoveRecord;
+using gmchess::MoveResult;
+using gmchess::MoveHistory;
 
-    // Container for the data we expect from the server.
-    HelloReply reply;
 
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
+class GameChessClient{
+public:
+
+  GameChessClient(std::shared_ptr<Channel> channel):
+    stub_(GameChess::NewStub(channel)) {}
+
+  void MakeMove(PIECES id, std::string to){
+
+    Move request;
+
+    request.set_id(id);
+    request.set_to(to);
+
+    MoveResult reply;
+
+
     ClientContext context;
 
-    // The actual RPC.
-    Status status = stub_->SayHello(&context, request, &reply);
 
-    // Act upon its status.
-    if (status.ok()) {
-      return reply.message();
+    Status status = stub_->MakeMove(&context, request, &reply);
+
+    if(status.ok()){
+      std::cout<< "success: "<< reply.success() << std::endl;
+      std::cout<< "resolve timestamp: " << reply.resolve_time_stamp() << std::endl;
+
     } else {
       std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
-      return "RPC failed";
+            << std::endl;
+      std::cout << "RPC failed" << std::endl;
     }
+
   }
 
- private:
-  std::unique_ptr<Greeter::Stub> stub_;
+
+private:
+
+  std::unique_ptr<GameChess::Stub> stub_;
+
 };
 
-int main(int argc, char** argv) {
+
+
+int main (int argc, char** argv){
+
   absl::ParseCommandLine(argc, argv);
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint specified by
-  // the argument "--target=" which is the only expected argument.
   std::string target_str = absl::GetFlag(FLAGS_target);
-  // We indicate that the channel isn't authenticated (use of
-  // InsecureChannelCredentials()).
-  GreeterClient greeter(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-  std::string user("world");
-  std::string reply = greeter.SayHello(user);
-  std::cout << "Greeter received: " << reply << std::endl;
+  GameChessClient gcc(
+    grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+  PIECES id = PIECES::BLACK_KING;
+  std::string to = "df8";
+  gcc.MakeMove(id, to);
 
   return 0;
+
 }
