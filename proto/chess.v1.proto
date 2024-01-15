@@ -4,9 +4,18 @@ package gmchess;
 
 service GameChess {
 
+  rpc PostRoom(Room) returns (stream RoomResult);
+
+  rpc JoinRoom(RoomRequest) returns (RoomResponse);
+
   rpc MakeMove(Move) returns (MoveResult);
 
+  rpc GetMove(Void) returns (stream MoveRecord);
+
   rpc GetMoveHistory(Void) returns (MoveHistory);
+
+
+  // PostChat
 
 }
 
@@ -46,6 +55,38 @@ enum PIECES {
 
 
 } 
+
+
+message Room {
+
+  PIECES id = 1;
+  string to = 2;
+
+}
+
+
+message RoomResult{
+
+  PIECES id = 1;
+  string to = 2;
+
+}
+
+message RoomRequest{
+
+  PIECES id = 1;
+  string to = 2;
+
+}
+
+message RoomResponse{
+
+  PIECES id = 1;
+  string to = 2;
+
+}
+
+
 
 
 message Void {}

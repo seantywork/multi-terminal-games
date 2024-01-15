@@ -1,32 +1,23 @@
 
-#include <iostream>
-#include <memory>
-#include <string>
-#include <thread>
-
-#include <fstream>
-#include <iomanip>
-#include <ctime>
-
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/strings/str_format.h"
-
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
-
-#include "chess.v1.grpc.pb.h"
+#include "chess_server.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
+using grpc::ServerWriter;
 using grpc::Status;
 
 using gmchess::GameChess;
 
 using gmchess::PIECES;
+
+using gmchess::Room;
+using gmchess::RoomResult;
+using gmchess::RoomRequest;
+using gmchess::RoomResponse;
+
 using gmchess::Void;
+
 using gmchess::Move;
 using gmchess::MoveRecord;
 using gmchess::MoveResult;
@@ -149,6 +140,15 @@ class GameChessServiceImpl final: public GameChess::Service{
 
           return Status::CANCELLED;
         }
+
+    }
+
+    Status PostRoom(ServerContext* context, const Room* request,
+                    ServerWriter<RoomResult>* reply) override {
+
+          // write search function
+
+          // write status until match is made
 
     }
 

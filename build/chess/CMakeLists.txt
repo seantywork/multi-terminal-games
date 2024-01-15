@@ -145,8 +145,10 @@ elseif(BUILD_DEV_THEN)
 
   include(../common.cmake)
 
+  set(CHESS_INCLUDE "../../include/chess")
 
   include_directories(
+    "${CHESS_INCLUDE}"
     ./dev
     )
 
