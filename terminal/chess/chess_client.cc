@@ -172,8 +172,40 @@ int main (int argc, char** argv){
   std::string target_str = absl::GetFlag(FLAGS_target);
 
 
+  std::stringstream str_stream;
+/*
+  std::string key;
+  std::ifstream key_file;
+
+  std::string cert;
+  std::ifstream cert_file;
+*/
+  std::string ca;
+  std::ifstream ca_file;
+
+/*
+  key_file.open("server.key");
+  str_stream << key_file.rdbuf();
+  key = str_stream.str();
+  key_file.close();
+
+  cert_file.open("server.pem");
+  str_stream<< cert_file.rdbuf();
+  cert = str_stream.str();
+  cert_file.close();
+*/
+  ca_file.open("ca.pem");
+  str_stream << ca_file.rdbuf();
+  ca = str_stream.str();
+  ca_file.close();
+
+  grpc::SslCredentialsOptions ssl_opt = {
+    ca
+  };
+
+
   GameChessClient gcc(
-    grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+    grpc::CreateChannel(target_str, grpc::SslCredentials (ssl_opt)));
 
 
   std::string target = argv[1];

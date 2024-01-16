@@ -188,7 +188,47 @@ void RunServer(uint16_t port){
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
 
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  // tls
+  grpc::SslServerCredentialsOptions ssl_opt;
+
+  std::stringstream str_stream;
+
+  std::string key;
+  std::ifstream key_file;
+
+  std::string cert;
+  std::ifstream cert_file;
+
+  std::string ca;
+  std::ifstream ca_file;
+
+
+  key_file.open("server.key");
+  str_stream << key_file.rdbuf();
+  key = str_stream.str();
+  key_file.close();
+
+  cert_file.open("server.pem");
+  str_stream << cert_file.rdbuf();
+  cert = str_stream.str();
+  cert_file.close();
+
+  ca_file.open("ca.pem");
+  str_stream << ca_file.rdbuf();
+  ca = str_stream.str();
+  ca_file.close();
+
+  grpc::SslServerCredentialsOptions::PemKeyCertPair keycert = {
+    key,
+    cert
+  };
+
+  
+  ssl_opt.pem_root_certs = ca;
+  ssl_opt.pem_key_cert_pairs.push_back(keycert);
+
+
+  builder.AddListeningPort(server_address, grpc::SslServerCredentials(ssl_opt));
 
   builder.RegisterService(&service);
 
