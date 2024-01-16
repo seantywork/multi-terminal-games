@@ -145,7 +145,7 @@ elseif(BUILD_DEV_THEN)
 
   include(../common.cmake)
 
-  set(CHESS_INCLUDE "../../include/chess")
+  set(CHESS_INCLUDE "../../include")
 
   include_directories(
     "${CHESS_INCLUDE}"
@@ -160,7 +160,12 @@ elseif(BUILD_DEV_THEN)
   # Targets terminal
   foreach(_target
     chess_client)
-    add_executable(${_target} "../../terminal/chess/${_target}.cc")
+    add_executable(
+      ${_target} 
+      "../../terminal/chess/chess_client.cc"
+      "../../terminal/chess/chess_req.cc"
+      "../../terminal/chess/chess_client_utils.cc"
+      )
     target_link_libraries(${_target}
       chess_grpc_proto
       absl::flags
@@ -173,7 +178,13 @@ elseif(BUILD_DEV_THEN)
   # Target game
   foreach(_target
     chess_server)
-    add_executable(${_target} "../../multigames/chess/${_target}.cc")
+    add_executable(
+      ${_target} 
+      "../../multigames/chess/chess_server.cc"
+      "../../multigames/chess/chess_admin.cc"
+      "../../multigames/chess/chess_calc.cc"
+      "../../multigames/chess/chess_utils.cc"
+      )
     target_link_libraries(${_target}
       chess_grpc_proto
       absl::flags

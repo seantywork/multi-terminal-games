@@ -1,114 +1,146 @@
 
-#include "chess_server.h"
+#include "chess_net/server.h"
 
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::ServerWriter;
-using grpc::Status;
-
-using gmchess::GameChess;
-
-using gmchess::PIECES;
-
-using gmchess::Room;
-using gmchess::RoomResult;
-using gmchess::RoomRequest;
-using gmchess::RoomResponse;
-
-using gmchess::Void;
-
-using gmchess::Move;
-using gmchess::MoveRecord;
-using gmchess::MoveResult;
-using gmchess::MoveHistory;
 
 ABSL_FLAG(uint16_t, port, 5005, "Server port for the chess service");
 
-std::string GetStringTimeNow(){
+std::mutex SERVER_MTX;
+
+std::map<std::string, Room> ROOM_OPENED;
+
+std::map<std::string, RoomLock> ROOM_CLOSED;
 
 
 
-    auto t = std::time(nullptr);
-    auto tm = *std::localtime(&t);
 
-    std::ostringstream oss;
-    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
-    std::string ts = oss.str();
-
-
-    return ts;
-
-}
-
-
-
-void PrintReqMove(Move* mv){
-
-
-  int piece_id = mv->id();
-  std::string to = mv->to();
-
-  std::cout<< "client piece id: " << piece_id << std::endl;
-  std::cout<< "client move: " << to << std::endl;
-
-}
-
-void SetMoveResult(MoveResult* mr){
-
-  mr->set_success(true);
-  mr->set_resolve_time_stamp(GetStringTimeNow());
-
-}
-
-
-void SetMoveRecord(MoveRecord* mrec, Move* mv, MoveResult* mr){
-
-  int step = 0;
-  PIECES id = mv->id();
-  std::string to = mv->to();
-
-  mrec->set_step(step);
-  mrec->set_id(id);
-  mrec->set_to(to);
-  *mrec->mutable_result() = *mr;
-
-}
-
-
-int AddToMoveHistory(MoveRecord* mrec){
-
-
-  MoveHistory mhist;
-
-  std::string bin_path = "bin/history.bin";
-
-  std::fstream input(bin_path, std::ios::in | std::ios::binary);
-
-  if(!input){
-    std::cout << "Creating new at: " << bin_path << std::endl; 
-  } else if (!mhist.ParseFromIstream(&input)) {
-    std::cerr << "Failed parsing from :" << bin_path << std::endl;
-    return -1;
-  }
-
-  auto new_mrec = mhist.add_move_history();
-
-  new_mrec->set_step(mrec->step());
-  new_mrec->set_id(mrec->id());
-  new_mrec->set_to(mrec->to());
-  *new_mrec->mutable_result() = *mrec->mutable_result();
-
-  std::fstream output(bin_path, std::ios::out | std::ios::trunc | std::ios::binary);
-  if(!mhist.SerializeToOstream(&output)){
-    std::cerr << "Failed writing to: " << bin_path << std::endl;
-    return -1;
-  }
-
-  return 0;
-}
 
 class GameChessServiceImpl final: public GameChess::Service{
+
+
+    Status PostRoom(ServerContext* context, const Room* request,
+                    ServerWriter<RoomResult>* reply_writer) override {
+        
+        int room_created = 0;
+
+        int match_found = 0; 
+
+        int lapsed_sec = 0;
+
+        Room new_r;
+
+        RoomResult r_res;
+
+        int match_timeout = request->match_timeout();
+
+        if (match_timeout > MAX_TIMEOUT_SECONDS){
+          match_timeout = MAX_TIMEOUT_SECONDS;
+        }
+
+        new_r.set_room_id(request->room_id());
+        new_r.set_room_name(request->room_name());
+        new_r.set_host_color(request->host_color());
+        new_r.set_match_timeout(request->match_timeout());
+        new_r.set_move_timeout(request->move_timeout());
+
+
+        room_created = RoomRegister(&new_r);
+
+        if(room_created < 1){
+
+          r_res.set_status(TALK::ABORT);
+
+          reply_writer->Write(r_res);
+
+          return Status::CANCELLED;
+        }
+
+        auto t_start = std::chrono::high_resolution_clock::now();
+
+        
+        for (;;){
+
+          r_res.set_status(TALK::WAIT);
+
+          reply_writer->Write(r_res);
+
+          lapsed_sec = GetTimeDiffSeconds(t_start);
+
+          if (lapsed_sec > match_timeout){
+            
+            r_res.set_status(TALK::TIMEOUT);
+
+            reply_writer->Write(r_res);
+
+            return Status::CANCELLED;
+          }
+
+          match_found = MatchWatcher(&new_r, &r_res); 
+
+          if(match_found == 1){
+
+            r_res.set_status(TALK::MATCH);
+
+            reply_writer->Write(r_res);
+
+            break;
+          }
+
+        }
+
+
+        return Status::OK;
+    }
+
+    Status JoinRoom(ServerContext* context, const Room* request,
+                    ServerWriter<RoomResult>* reply_writer){
+
+        int match_found = 0; 
+
+        int lapsed_sec = 0;
+
+        int match_timeout = request->match_timeout();
+
+        if (match_timeout > MAX_TIMEOUT_SECONDS){
+          match_timeout = MAX_TIMEOUT_SECONDS;
+        }
+
+        RoomResult r_res;
+
+        auto t_start = std::chrono::high_resolution_clock::now();
+
+        for(;;){
+
+          r_res.set_status(TALK::WAIT);
+
+          reply_writer->Write(r_res);
+
+          lapsed_sec = GetTimeDiffSeconds(t_start);
+
+          if (lapsed_sec > match_timeout){
+            
+            r_res.set_status(TALK::TIMEOUT);
+
+            reply_writer->Write(r_res);
+
+            return Status::CANCELLED;
+          }
+
+          match_found = MatchFinder(request, &r_res); 
+
+          if(match_found == 1){
+
+            r_res.set_status(TALK::MATCH);
+
+            reply_writer->Write(r_res);
+
+            break;
+          }
+
+        }
+
+
+        return Status::OK;
+    }
 
     Status MakeMove(ServerContext* context, const Move* request,
                     MoveResult* reply) override {
@@ -143,15 +175,6 @@ class GameChessServiceImpl final: public GameChess::Service{
 
     }
 
-    Status PostRoom(ServerContext* context, const Room* request,
-                    ServerWriter<RoomResult>* reply) override {
-
-          // write search function
-
-          // write status until match is made
-
-    }
-
 
 };
 
@@ -179,6 +202,8 @@ void RunServer(uint16_t port){
 
 
 int main (int argc, char** argv){
+
+  InitRandomDevice();
 
   absl::ParseCommandLine(argc, argv);
   RunServer(absl::GetFlag(FLAGS_port));
