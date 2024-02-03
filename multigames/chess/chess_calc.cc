@@ -3,6 +3,35 @@
 
 
 
+TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result){
+
+  TALK ret_status;
+
+
+
+
+
+
+  return ret_status;
+}
+
+
+
+TALK WatchChessMove(Move* req_mv, MoveRecord* watch_mr_res, MoveResult* watch_mv_result){
+
+  TALK ret_status;
+
+
+
+
+
+
+  return ret_status;
+
+}
+
+
+
 void PrintReqMove(Move* mv){
 
 

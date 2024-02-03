@@ -8,13 +8,15 @@ service GameChess {
 
   rpc JoinRoom(Room) returns (stream RoomResult);
 
-  rpc MakeMove(Move) returns (MoveResult);
-
-  rpc GetMove(Void) returns (stream MoveRecord);
-
   rpc MakeMoveThenGet(Move) returns (stream MoveRecord);
 
   rpc GetMoveHistory(Void) returns (MoveHistory);
+
+  rpc Leave(GG) returns (Report);
+
+  rpc MakeMove(Move) returns (MoveResult);
+
+  rpc GetMove(Void) returns (stream MoveRecord);
 
 
   // PostChat
@@ -30,7 +32,9 @@ enum TALK {
   TIMEOUT = 2;
   MATCH = 3;
   TURN = 4;
-
+  EAUTH = 5;
+  ETURN = 6;
+  
 }
 
 enum SIDE {
@@ -132,7 +136,8 @@ message MoveRecord {
 message MoveResult {
 
   bool success = 1;
-  string resolve_time_stamp = 2;
+  TALK code = 2;
+  string resolve_time_stamp = 3;
 
 }
 
@@ -144,4 +149,16 @@ message MoveHistory{
 
 }
 
+message GG{
+
+  string room_id = 1;
+  string key = 2;
+
+}
+
+message Report{
+
+  string message = 1;
+
+}
 

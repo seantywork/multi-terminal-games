@@ -142,6 +142,152 @@ class GameChessServiceImpl final: public GameChess::Service{
         return Status::OK;
     }
 
+    Status MakeMoveThenGet(ServerContext* context, const Move* request,
+                    ServerWriter<MoveRecord>* reply_writer) {
+
+        Move req_mv = *request;
+
+        MoveRecord mr_res;
+
+        MoveResult mv_result;
+
+        TALK authenticated;
+
+        TALK move_accepted;
+
+        authenticated = AuthIncomingRequest(&req_mv);
+
+        if(authenticated != TALK::MATCH){
+
+          mv_result.set_success(false);
+
+          mv_result.set_code(authenticated);
+
+          std::string time_stamp_str = GetStringTimeNow();
+
+          mv_result.set_resolve_time_stamp(time_stamp_str);
+
+          *mr_res.mutable_result() = mv_result;
+
+          reply_writer->Write(mr_res);
+
+          Loggerln<std::string>("client authentication failed: " + std::to_string(authenticated));
+
+          return Status::CANCELLED;
+          
+        }
+        
+
+        move_accepted = ChessMove(&req_mv, &mr_res, &mv_result);
+
+        if(move_accepted != TALK::TURN){
+
+          reply_writer->Write(mr_res);
+
+          Loggerln<std::string>("chess move not accepted: " + std::to_string(move_accepted));
+
+          return Status::CANCELLED;
+
+        }
+
+
+        Loggerln<std::string>("chess move acceptd: field updated");
+
+        Loggerln<std::string>("handing over turn to the opponent");
+
+        TALK judge;
+
+        for(;;){
+          
+          int hit = 0;
+
+          MoveRecord watch_mr_res;
+          MoveResult watch_mv_result;
+          
+
+          judge = WatchChessMove(&req_mv, &watch_mr_res, &watch_mv_result);
+
+          switch(judge){
+
+            case TALK::WAIT:
+
+              reply_writer->Write(mr_res);
+
+              break;
+
+            case TALK::TURN:
+
+              hit = 1;
+
+              reply_writer->Write(watch_mr_res);
+
+              break;
+
+            case TALK::TIMEOUT:
+
+              hit = -1;
+
+              reply_writer->Write(watch_mr_res);
+
+              break;
+
+            case TALK::ABORT:
+
+              hit = -1;
+
+              reply_writer->Write(watch_mr_res);
+
+              break;
+            
+            default:
+
+              hit = -1;
+
+              reply_writer->Write(watch_mr_res);
+
+              break;
+
+          }
+
+          if(hit == 1){
+
+            break;
+
+          } else if(hit == -1){
+
+            return Status::CANCELLED;
+
+          }
+
+        }
+
+        return Status::OK;
+    }
+
+
+    Status Leave(ServerContext* context, const GG* request,
+                    Report* reply) override {
+
+        GG req_gg = *request;
+
+        int success = 0;
+
+        success = ConstructLeaveReport(&req_gg, reply);
+
+        if(success < 1){
+          
+          Loggerln<std::string>("failed to construct leave message");
+          
+          return Status::CANCELLED;
+
+        }
+
+        Loggerln<std::string>("leave process successful");
+
+        return Status::OK;
+
+    }
+
     Status MakeMove(ServerContext* context, const Move* request,
                     MoveResult* reply) override {
 

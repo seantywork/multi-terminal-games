@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iomanip>
 #include <ctime>
+#include <cstdlib>
 
 #include <random>
 
@@ -46,27 +47,40 @@ using gmchess::MoveRecord;
 using gmchess::MoveResult;
 using gmchess::MoveHistory;
 
+using gmchess::GG;
+using gmchess::Report;
+
 void InitRandomDevice();
 
-int GetTimeDiffSeconds(std::chrono::time_point<std::chrono::high_resolution_clock>);
+int GetTimeDiffSeconds(std::chrono::time_point<std::chrono::high_resolution_clock> t_start);
 
 std::string GetStringTimeNow();
 
-std::string GenRandomHexString(int);
+std::string GenRandomHexString(int keysize);
 
-int RoomRegister(Room*);
+int RoomRegister(Room* new_r);
 
-int MatchWatcher(Room*, RoomResult*);
+int MatchWatcher(Room* new_r, RoomResult* ret_rr);
 
-int MatchFinder(const Room*, RoomResult*);
+int MatchFinder(const Room* req_r, RoomResult* ret_rr);
 
-void PrintReqMove(Move*);
 
-void SetMoveResult(MoveResult*);
+TALK AuthIncomingRequest(Move* req_mv);
 
-void SetMoveRecord(MoveRecord*, Move*, MoveResult*);
+TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result);
 
-int AddToMoveHistory(MoveRecord*);
+TALK WatchChessMove(Move* req_mv, MoveRecord* watch_mr_res, MoveResult* watch_mv_result);
+
+void PrintReqMove(Move* mv);
+
+void SetMoveResult(MoveResult* mr);
+
+void SetMoveRecord(MoveRecord* mrec, Move* mv, MoveResult* mr);
+
+int AddToMoveHistory(MoveRecord* mrec);
+
+
+int ConstructLeaveReport(GG* req_gg, Report* ret_rep);
 
 #define MAX_TIMEOUT_SECONDS 60
 

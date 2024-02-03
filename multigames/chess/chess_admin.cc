@@ -236,3 +236,35 @@ int MatchFinder(const Room* req_r, RoomResult* ret_rr){
 
     return ret_stat;
 }
+
+
+
+TALK AuthIncomingRequest(Move* req_mv){
+
+
+    TALK ret_stat;
+
+
+
+
+
+
+
+    return ret_stat;
+}
+
+
+int ConstructLeaveReport(GG* req_gg, Report* ret_rep){
+
+
+    int ret_stat;
+
+
+
+
+
+
+    return ret_stat;
+
+
+}
