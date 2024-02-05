@@ -10,6 +10,7 @@ std::map<std::string, Room> ROOM_OPENED;
 
 std::map<std::string, RoomLock> ROOM_CLOSED;
 
+std::map<std::string, RoomStatus> ROOM_CLOSED_STATUS;
 
 
 

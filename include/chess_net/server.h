@@ -38,7 +38,7 @@ using gmchess::PIECES;
 using gmchess::Room;
 using gmchess::RoomLock;
 using gmchess::RoomResult;
-
+using gmchess::RoomStatus;
 
 using gmchess::Void;
 
@@ -67,6 +67,11 @@ int MatchFinder(const Room* req_r, RoomResult* ret_rr);
 
 TALK AuthIncomingRequest(Move* req_mv);
 
+int AuthCheckIfValidTurn(std::string room_id, std::string key);
+
+int ConstructLeaveReport(GG* req_gg, Report* ret_rep);
+
+
 TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result);
 
 TALK WatchChessMove(Move* req_mv, MoveRecord* watch_mr_res, MoveResult* watch_mv_result);
@@ -80,7 +85,6 @@ void SetMoveRecord(MoveRecord* mrec, Move* mv, MoveResult* mr);
 int AddToMoveHistory(MoveRecord* mrec);
 
 
-int ConstructLeaveReport(GG* req_gg, Report* ret_rep);
 
 #define MAX_TIMEOUT_SECONDS 60
 
@@ -91,6 +95,8 @@ extern std::mutex SERVER_MTX;
 extern std::map<std::string, Room> ROOM_OPENED;
 
 extern std::map<std::string, RoomLock> ROOM_CLOSED;
+
+extern std::map<std::string, RoomStatus> ROOM_CLOSED_STATUS;
 
 extern std::random_device RD;
 extern std::mt19937 RANDEV;

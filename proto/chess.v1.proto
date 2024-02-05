@@ -106,9 +106,17 @@ message RoomResult{
 
 message RoomLock {
 
-  string poster_key = 1;
-  string joiner_key = 2;
-  Room r = 3;
+  Room r = 1;
+  string poster_key = 2;
+  string joiner_key = 3;
+
+}
+
+message RoomStatus{
+
+  Room r = 1;
+  MoveRecord move_last = 2;
+  MoveHistory move_history = 3;
 
 }
 
