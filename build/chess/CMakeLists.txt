@@ -184,6 +184,7 @@ elseif(BUILD_DEV_THEN)
       "../../multigames/chess/chess_admin.cc"
       "../../multigames/chess/chess_calc.cc"
       "../../multigames/chess/chess_utils.cc"
+      "../../multigames/chess/v1/chess.cc"
       )
     target_link_libraries(${_target}
       chess_grpc_proto

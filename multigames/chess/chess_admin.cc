@@ -217,6 +217,10 @@ int MatchFinder(const Room* req_r, RoomResult* ret_rr){
 
         ROOM_CLOSED_STATUS.insert({target_room_id, rs});
 
+        Game g;
+
+        ROOM_GAME.insert({target_room_id, g});
+
         Loggerln<std::string>("matching room [" + target_room_name + "] status changed: locked");
 
         Room ret_r;
@@ -255,7 +259,7 @@ TALK AuthIncomingRequest(Move* req_mv){
 
     int auth_flag = AuthCheckIfValidTurn(room_id, key);
 
-    if(auth_flag < 1){
+    if(auth_flag < 0){
 
         Loggerln<std::string>("authentication failure: " + std::to_string(auth_flag)); 
 
@@ -267,7 +271,7 @@ TALK AuthIncomingRequest(Move* req_mv){
     
     Loggerln<std::string>("authentication success: " + std::to_string(auth_flag));
 
-    ret_stat = TALK::MATCH;
+    ret_stat = TALK::AUTH;
 
 
     return ret_stat;
@@ -304,12 +308,13 @@ int AuthCheckIfValidTurn(std::string room_id, std::string key){
 
     int is_poster_key = 0;
 
-    int is_poster_white = 0;
+    int is_white = 0;
 
     int opening = 0;
 
     int white_turn = 0;
 
+    
 
 
     RoomLock* rl = &ROOM_CLOSED[room_id];
@@ -342,9 +347,29 @@ int AuthCheckIfValidTurn(std::string room_id, std::string key){
     SIDE host_color = r->host_color();
 
     if(host_color == SIDE::WHITE){
-        is_poster_white = 1;
+
+        if(is_poster_key == 1){
+
+            is_white = 1;
+
+        } else {
+
+            is_white = 0;
+
+        }
+
     } else {
-        is_poster_white = 0;
+        
+        if(is_poster_key == 1){
+
+            is_white = 0;
+
+        } else {
+
+            is_white = 1;
+
+        }
+
     }
 
 
@@ -358,23 +383,15 @@ int AuthCheckIfValidTurn(std::string room_id, std::string key){
 
         opening = 1;
 
-        if(is_poster_white == 1 && is_poster_key != 1){
+        if(is_white != 1){
 
-            Loggerln<std::string>("host should open, but guest tried to open");
+            Loggerln<std::string>("white should open, but black tried to open: " + std::to_string(is_poster_key));
 
             SERVER_MTX.unlock();
 
             return -4;
 
-        } else if (is_poster_white == 0 && is_poster_key == 1){
-
-            Loggerln<std::string>("guest should open, but host tried to open");
-
-            SERVER_MTX.unlock();
-
-            return -5;
-
-        }
+        } 
 
     }
 
@@ -392,22 +409,34 @@ int AuthCheckIfValidTurn(std::string room_id, std::string key){
 
     if(piece_id_int < 15){
 
-                
 
+        white_turn = 0;
+            
 
     } else {
 
-
+        white_turn = 1;
 
 
     }
 
+    if(white_turn == 0 && is_white == 1){
+
+        Loggerln<std::string>("black turn, but white tried to move");
+
+        SERVER_MTX.unlock();
+
+        return -5;
 
 
+    } else if(white_turn == 1 && is_white == 0){
 
+        Loggerln<std::string>("white turn, but black tried to move");
     
+        SERVER_MTX.unlock();
 
-
+        return -6;
+    }
 
     SERVER_MTX.unlock();
 

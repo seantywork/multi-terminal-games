@@ -12,8 +12,12 @@ TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result){
 
 
 
+
   return ret_status;
 }
+
+
+
 
 
 

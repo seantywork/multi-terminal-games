@@ -1,9 +1,8 @@
-#include "stdinc.h"
+#include "chess/v1/engine.h"
+#include "chess/v1/user_interface.h"
 
-#include "user_interface.h"
-#include "chess.h"
 
-#include "debug.h"
+#include "chess/debug.h"
 
 
 //---------------------------------------------------------------------------------------

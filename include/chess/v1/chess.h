@@ -1,5 +1,15 @@
-#pragma once
-#include "stdinc.h"
+
+#ifndef _CHESS_V1_CHESS_H_
+#define _CHESS_V1_CHESS_H_
+
+
+#include "chess/stdinc.h"
+
+
+#define WHITE_SQUARE 0xDB
+#define BLACK_SQUARE 0xFF
+#define EMPTY_SQUARE 0x20
+
 
 class Chess
 {
@@ -201,3 +211,5 @@ private:
    // Has the game finished already?
    bool m_bGameFinished;
 };
+
+#endif

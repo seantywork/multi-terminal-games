@@ -1,7 +1,4 @@
-#include "stdinc.h"
-#include "chess.h"
-#include "user_interface.h"
-
+#include "chess/v1/engine.h"
 
 // -------------------------------------------------------------------
 // Chess class

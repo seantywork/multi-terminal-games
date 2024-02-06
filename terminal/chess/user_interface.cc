@@ -1,5 +1,5 @@
-#include "stdinc.h"
-#include "user_interface.h"
+
+#include "chess/v1/user_interface.h"
 
 // Save the next message to be displayed (regardind last command)
 string next_message;

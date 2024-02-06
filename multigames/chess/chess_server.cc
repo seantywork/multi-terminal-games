@@ -12,6 +12,7 @@ std::map<std::string, RoomLock> ROOM_CLOSED;
 
 std::map<std::string, RoomStatus> ROOM_CLOSED_STATUS;
 
+std::map<std::string, Game> ROOM_GAME;
 
 
 
@@ -158,7 +159,7 @@ class GameChessServiceImpl final: public GameChess::Service{
 
         authenticated = AuthIncomingRequest(&req_mv);
 
-        if(authenticated != TALK::MATCH){
+        if(authenticated != TALK::AUTH){
 
           mv_result.set_success(false);
 
@@ -181,7 +182,7 @@ class GameChessServiceImpl final: public GameChess::Service{
 
         move_accepted = ChessMove(&req_mv, &mr_res, &mv_result);
 
-        if(move_accepted != TALK::TURN){
+        if(move_accepted != TALK::OKAY){
 
           reply_writer->Write(mr_res);
 
@@ -210,7 +211,7 @@ class GameChessServiceImpl final: public GameChess::Service{
 
           switch(judge){
 
-            case TALK::WAIT:
+            case TALK::WATCH:
 
               reply_writer->Write(mr_res);
 
@@ -224,7 +225,7 @@ class GameChessServiceImpl final: public GameChess::Service{
 
               break;
 
-            case TALK::TIMEOUT:
+            case TALK::ETIMEOUT:
 
               hit = -1;
 
@@ -232,7 +233,7 @@ class GameChessServiceImpl final: public GameChess::Service{
 
               break;
 
-            case TALK::ABORT:
+            case TALK::EABORT:
 
               hit = -1;
 

@@ -31,9 +31,14 @@ enum TALK {
   WAIT = 1;
   TIMEOUT = 2;
   MATCH = 3;
-  TURN = 4;
-  EAUTH = 5;
-  ETURN = 6;
+  AUTH = 5;
+  OKAY = 6;
+  WATCH = 7;
+  TURN = 8;
+  EAUTH = 9;
+  ETURN = 10;
+  ETIMEOUT = 11;
+  EABORT = 12;
   
 }
 

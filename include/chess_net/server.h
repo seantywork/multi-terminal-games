@@ -23,6 +23,8 @@
 
 #include "chess.v1.grpc.pb.h"
 
+#include "chess/v1/engine.h"
+
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -97,6 +99,8 @@ extern std::map<std::string, Room> ROOM_OPENED;
 extern std::map<std::string, RoomLock> ROOM_CLOSED;
 
 extern std::map<std::string, RoomStatus> ROOM_CLOSED_STATUS;
+
+extern std::map<std::string, Game> ROOM_GAME;
 
 extern std::random_device RD;
 extern std::mt19937 RANDEV;
