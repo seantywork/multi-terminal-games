@@ -277,68 +277,25 @@ TALK AuthIncomingRequest(Move* req_mv){
     return ret_stat;
 }
 
-int AuthCheckIfValidTurn(std::string room_id, std::string key){
-
-    int ret_stat;
-
-    std::string log_str;
-
-    SERVER_MTX.lock();
-
-    if(ROOM_CLOSED.find(room_id) == ROOM_CLOSED.end()){
-
-        Loggerln<std::string>("couldn't find room lock for room id: " + room_id);
-
-        SERVER_MTX.unlock();
-
-        return -1;
-    }
-
-    if(ROOM_CLOSED_STATUS.find(room_id) == ROOM_CLOSED_STATUS.end()){
-
-
-        Loggerln<std::string>("couldn't find room lock status for room id: " + room_id);
-
-        SERVER_MTX.unlock();
-
-        return -2;
-
-    }
-
-
-    int is_poster_key = 0;
-
-    int is_white = 0;
-
-    int opening = 0;
-
-    int white_turn = 0;
-
-    
+int GetKeyContextInfoByRoomId(std::string room_id, std::string key, int* is_poster, int* is_white, int* opening, int* white_turn){
 
 
     RoomLock* rl = &ROOM_CLOSED[room_id];
-
+    
     RoomStatus* rs = &ROOM_CLOSED_STATUS[room_id];    
+
+    std::string log_str;
+
+    *opening = 0;
 
     if(rl->poster_key() == key){
 
-        is_poster_key = 1;
+        *is_poster = 1;
 
     } else if(rl->joiner_key() == key){
 
-        is_poster_key = 0;
+        *is_poster = 0;
     
-    } else {
-
-        log_str = "invalid key: " + key + ", for room id: " + room_id; 
-
-        Loggerln<std::string>(log_str);
-
-        SERVER_MTX.unlock();
-
-        return -3;
-
     } 
 
 
@@ -348,25 +305,25 @@ int AuthCheckIfValidTurn(std::string room_id, std::string key){
 
     if(host_color == SIDE::WHITE){
 
-        if(is_poster_key == 1){
+        if(*is_poster == 1){
 
-            is_white = 1;
+            *is_white = 1;
 
         } else {
 
-            is_white = 0;
+            *is_white = 0;
 
         }
 
     } else {
         
-        if(is_poster_key == 1){
+        if(*is_poster == 1){
 
-            is_white = 0;
+            *is_white = 0;
 
         } else {
 
-            is_white = 1;
+            *is_white = 1;
 
         }
 
@@ -379,24 +336,15 @@ int AuthCheckIfValidTurn(std::string room_id, std::string key){
 
     if(mv_hist_size == 0){
 
-        Loggerln<std::string>("opening move for white");
+        *opening = 1;
 
-        opening = 1;
-
-        if(is_white != 1){
-
-            Loggerln<std::string>("white should open, but black tried to open: " + std::to_string(is_poster_key));
-
-            SERVER_MTX.unlock();
-
-            return -4;
-
-        } 
+        *white_turn = 1;
 
     }
 
 
-    if(opening == 1){
+    if(*opening == 1){
+        
         return 0;
     }
 
@@ -409,41 +357,71 @@ int AuthCheckIfValidTurn(std::string room_id, std::string key){
 
     if(piece_id_int < 15){
 
-
-        white_turn = 0;
+        *white_turn = 0;
             
-
     } else {
 
-        white_turn = 1;
-
+        *white_turn = 1;
 
     }
-
-    if(white_turn == 0 && is_white == 1){
-
-        Loggerln<std::string>("black turn, but white tried to move");
-
-        SERVER_MTX.unlock();
-
-        return -5;
-
-
-    } else if(white_turn == 1 && is_white == 0){
-
-        Loggerln<std::string>("white turn, but black tried to move");
-    
-        SERVER_MTX.unlock();
-
-        return -6;
-    }
-
-    SERVER_MTX.unlock();
 
 
     return 1;
 
 }
+
+
+int AuthCheckIfValidRoomKey(std::string room_id, std::string key){
+
+
+    std::string log_str;
+
+    if(ROOM_CLOSED.find(room_id) == ROOM_CLOSED.end()){
+
+        Loggerln<std::string>("couldn't find room lock for room id: " + room_id);
+
+        return -1;
+    }
+
+    if(ROOM_CLOSED_STATUS.find(room_id) == ROOM_CLOSED_STATUS.end()){
+
+
+        Loggerln<std::string>("couldn't find room lock status for room id: " + room_id);
+
+        return -2;
+
+    }
+
+    if(ROOM_GAME.find(room_id) == ROOM_GAME.end()){
+
+
+        Loggerln<std::string>("couldn't find room game for room id: " + room_id);
+
+        return -3;
+
+    }
+
+
+    RoomLock* rl = &ROOM_CLOSED[room_id];
+    
+
+    if((rl->poster_key() == key) || (rl->joiner_key() == key)){
+
+        return 0;
+    
+    } else {
+
+        log_str = "invalid key: " + key + ", for room id: " + room_id; 
+
+        Loggerln<std::string>(log_str);
+
+        return -4;
+
+    } 
+
+
+}
+
 
 
 int ConstructLeaveReport(GG* req_gg, Report* ret_rep){

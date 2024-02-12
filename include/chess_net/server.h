@@ -69,7 +69,9 @@ int MatchFinder(const Room* req_r, RoomResult* ret_rr);
 
 TALK AuthIncomingRequest(Move* req_mv);
 
-int AuthCheckIfValidTurn(std::string room_id, std::string key);
+int GetKeyContextInfoByRoomId(std::string room_id, std::string key, int* is_poster, int* is_white, int* opening, int* white_turn);
+
+int AuthCheckIfValidRoomKey(std::string room_id, std::string key);
 
 int ConstructLeaveReport(GG* req_gg, Report* ret_rep);
 

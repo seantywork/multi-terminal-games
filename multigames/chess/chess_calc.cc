@@ -7,6 +7,63 @@ TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result){
 
   TALK ret_status;
 
+  std::string room_id;
+
+  std::string key;
+
+  room_id = req_mv->room_id();
+
+  key = req_mv->key();
+
+
+  int is_poster_key = 0;
+
+  int is_white = 0;
+
+  int opening = 0;
+
+  int white_turn = 0;
+
+  
+  int check = GetKeyContextInfoByRoomId(room_id, key, &is_poster_key, &is_white, &opening, &white_turn);
+
+  if(check < 0){
+
+    Loggerln<std::string>("failed to get key context by room id: " + std::to_string(check));
+
+    return TALK::ENTOK;
+
+  }
+
+  if(opening == 1){
+    
+    Loggerln<std::string>("opening move for: room_id: " + room_id + " key: " + key);
+
+  }
+
+  if(white_turn == 0 && is_white == 1){
+
+    Loggerln<std::string>("black turn, but white tried to move");
+
+    return TALK::ENTOK;
+
+
+  } else if(white_turn == 1 && is_white == 0){
+
+    Loggerln<std::string>("white turn, but black tried to move");
+
+    return TALK::ENTOK;
+
+  }
+
+  Game* gm = &ROOM_GAME[room_id];
+
+  
+
+  
+
+
+
 
 
 

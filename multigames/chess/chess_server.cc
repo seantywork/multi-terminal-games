@@ -157,7 +157,7 @@ class GameChessServiceImpl final: public GameChess::Service{
 
         TALK move_accepted;
 
-        authenticated = AuthIncomingRequest(&req_mv);
+        authenticated = AuthIncomingRequest(&req_mv, &is_white, &is_poster);
 
         if(authenticated != TALK::AUTH){
 

@@ -36,9 +36,10 @@ enum TALK {
   WATCH = 7;
   TURN = 8;
   EAUTH = 9;
-  ETURN = 10;
-  ETIMEOUT = 11;
-  EABORT = 12;
+  ENTOK = 10;
+  ETURN = 11;
+  ETIMEOUT = 12;
+  EABORT = 13;
   
 }
 
