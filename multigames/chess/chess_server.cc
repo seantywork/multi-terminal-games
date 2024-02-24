@@ -157,7 +157,9 @@ class GameChessServiceImpl final: public GameChess::Service{
 
         TALK move_accepted;
 
-        authenticated = AuthIncomingRequest(&req_mv, &is_white, &is_poster);
+        int is_white = 0;
+
+        authenticated = AuthIncomingRequest(&req_mv);
 
         if(authenticated != TALK::AUTH){
 
@@ -180,7 +182,11 @@ class GameChessServiceImpl final: public GameChess::Service{
         }
         
 
-        move_accepted = ChessMove(&req_mv, &mr_res, &mv_result);
+        SERVER_MTX.lock();
+
+        move_accepted = ChessMove(&is_white, &req_mv, &mr_res, &mv_result);
+
+        SERVER_MTX.lock();
 
         if(move_accepted != TALK::OKAY){
 
@@ -207,7 +213,7 @@ class GameChessServiceImpl final: public GameChess::Service{
           MoveResult watch_mv_result;
           
 
-          judge = WatchChessMove(&req_mv, &watch_mr_res, &watch_mv_result);
+          judge = WatchChessMove(&is_white, &req_mv, &watch_mr_res, &watch_mv_result);
 
           switch(judge){
 

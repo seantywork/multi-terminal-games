@@ -257,7 +257,7 @@ TALK AuthIncomingRequest(Move* req_mv){
 
     std::string key = req_mv->key();
 
-    int auth_flag = AuthCheckIfValidTurn(room_id, key);
+    int auth_flag = AuthCheckIfValidRoomKey(room_id, key);
 
     if(auth_flag < 0){
 
@@ -277,98 +277,6 @@ TALK AuthIncomingRequest(Move* req_mv){
     return ret_stat;
 }
 
-int GetKeyContextInfoByRoomId(std::string room_id, std::string key, int* is_poster, int* is_white, int* opening, int* white_turn){
-
-
-    RoomLock* rl = &ROOM_CLOSED[room_id];
-    
-    RoomStatus* rs = &ROOM_CLOSED_STATUS[room_id];    
-
-    std::string log_str;
-
-    *opening = 0;
-
-    if(rl->poster_key() == key){
-
-        *is_poster = 1;
-
-    } else if(rl->joiner_key() == key){
-
-        *is_poster = 0;
-    
-    } 
-
-
-    Room* r = rl->mutable_r();
-
-    SIDE host_color = r->host_color();
-
-    if(host_color == SIDE::WHITE){
-
-        if(*is_poster == 1){
-
-            *is_white = 1;
-
-        } else {
-
-            *is_white = 0;
-
-        }
-
-    } else {
-        
-        if(*is_poster == 1){
-
-            *is_white = 0;
-
-        } else {
-
-            *is_white = 1;
-
-        }
-
-    }
-
-
-    MoveHistory* mv_hist = rs->mutable_move_history();
-    
-    int mv_hist_size = mv_hist->move_history_size();
-
-    if(mv_hist_size == 0){
-
-        *opening = 1;
-
-        *white_turn = 1;
-
-    }
-
-
-    if(*opening == 1){
-        
-        return 0;
-    }
-
-
-    MoveRecord* mv_last = rs->mutable_move_last();
-
-    PIECES piece_id = mv_last->id();
-
-    int piece_id_int = (int)piece_id;
-
-    if(piece_id_int < 15){
-
-        *white_turn = 0;
-            
-    } else {
-
-        *white_turn = 1;
-
-    }
-
-
-    return 1;
-
-}
 
 
 int AuthCheckIfValidRoomKey(std::string room_id, std::string key){

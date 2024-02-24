@@ -69,16 +69,18 @@ int MatchFinder(const Room* req_r, RoomResult* ret_rr);
 
 TALK AuthIncomingRequest(Move* req_mv);
 
-int GetKeyContextInfoByRoomId(std::string room_id, std::string key, int* is_poster, int* is_white, int* opening, int* white_turn);
-
 int AuthCheckIfValidRoomKey(std::string room_id, std::string key);
 
 int ConstructLeaveReport(GG* req_gg, Report* ret_rep);
 
 
-TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result);
+TALK ChessMove(int* is_white, Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result);
 
-TALK WatchChessMove(Move* req_mv, MoveRecord* watch_mr_res, MoveResult* watch_mv_result);
+int GetKeyContextInfoByRoomId(std::string room_id, std::string key, int* is_poster, int* is_white, int* opening, int* white_turn);
+
+void UpdateStepInfoByRoomId(std::string room_id, MoveRecord* mr);
+
+TALK WatchChessMove(int* is_white, Move* req_mv, MoveRecord* watch_mr_res, MoveResult* watch_mv_result);
 
 void PrintReqMove(Move* mv);
 

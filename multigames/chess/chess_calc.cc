@@ -3,7 +3,7 @@
 
 
 
-TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result){
+TALK ChessMove(int* is_white, Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result){
 
   TALK ret_status;
 
@@ -11,21 +11,32 @@ TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result){
 
   std::string key;
 
+  PIECES piece_id;
+
+  std::string move_to;
+
   room_id = req_mv->room_id();
 
   key = req_mv->key();
 
+  piece_id = req_mv->id();
+
+  move_to = req_mv->to();
+
+
 
   int is_poster_key = 0;
 
-  int is_white = 0;
+  int is_white_piece = 0;
 
   int opening = 0;
 
   int white_turn = 0;
 
   
-  int check = GetKeyContextInfoByRoomId(room_id, key, &is_poster_key, &is_white, &opening, &white_turn);
+  int check = GetKeyContextInfoByRoomId(room_id, key, &is_poster_key, &is_white_piece, &opening, &white_turn);
+
+  *is_white = is_white_piece;
 
   if(check < 0){
 
@@ -41,14 +52,14 @@ TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result){
 
   }
 
-  if(white_turn == 0 && is_white == 1){
+  if(white_turn == 0 && is_white_piece == 1){
 
     Loggerln<std::string>("black turn, but white tried to move");
 
     return TALK::ENTOK;
 
 
-  } else if(white_turn == 1 && is_white == 0){
+  } else if(white_turn == 1 && is_white_piece == 0){
 
     Loggerln<std::string>("white turn, but black tried to move");
 
@@ -56,18 +67,30 @@ TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result){
 
   }
 
+
+  Loggerln<std::string>("accessing game class for: " + room_id);
+
   Game* gm = &ROOM_GAME[room_id];
 
-  
+  Loggerln<std::string>("exiting game class for: " + room_id);  
 
-  
+  mv_result->set_success(true);
 
+  mv_result->set_code(TALK::OKAY);
 
+  std::string rt_temp = GetStringTimeNow();
 
+  mv_result->set_resolve_time_stamp(rt_temp);
 
+  mr_res->set_id(piece_id);
 
+  mr_res->set_to(move_to);
 
+  *mr_res->mutable_result() = *mv_result;
 
+  UpdateStepInfoByRoomId(room_id, mr_res);
+
+  ret_status = TALK::OKAY;
 
 
   return ret_status;
@@ -76,15 +99,228 @@ TALK ChessMove(Move* req_mv, MoveRecord* mr_res, MoveResult* mv_result){
 
 
 
+int GetKeyContextInfoByRoomId(std::string room_id, std::string key, int* is_poster, int* is_white, int* opening, int* white_turn){
 
 
-TALK WatchChessMove(Move* req_mv, MoveRecord* watch_mr_res, MoveResult* watch_mv_result){
+  RoomLock* rl = &ROOM_CLOSED[room_id];
+  
+  RoomStatus* rs = &ROOM_CLOSED_STATUS[room_id];    
+
+  std::string log_str;
+
+  *opening = 0;
+
+  if(rl->poster_key() == key){
+
+      *is_poster = 1;
+
+  } else if(rl->joiner_key() == key){
+
+      *is_poster = 0;
+  
+  } 
+
+
+  Room* r = rl->mutable_r();
+
+  SIDE host_color = r->host_color();
+
+  if(host_color == SIDE::WHITE){
+
+      if(*is_poster == 1){
+
+          *is_white = 1;
+
+      } else {
+
+          *is_white = 0;
+
+      }
+
+  } else {
+      
+      if(*is_poster == 1){
+
+          *is_white = 0;
+
+      } else {
+
+          *is_white = 1;
+
+      }
+
+  }
+
+
+  MoveHistory* mv_hist = rs->mutable_move_history();
+  
+  int mv_hist_size = mv_hist->move_history_size();
+
+  if(mv_hist_size == 0){
+
+      *opening = 1;
+
+      *white_turn = 1;
+
+  }
+
+
+  if(*opening == 1){
+      
+      return 0;
+  }
+
+
+  MoveRecord* mv_last = rs->mutable_move_last();
+
+  PIECES piece_id = mv_last->id();
+
+  int piece_id_int = (int)piece_id;
+
+  if(piece_id_int < 15){
+
+      *white_turn = 0;
+          
+  } else {
+
+      *white_turn = 1;
+
+  }
+
+
+  return 1;
+
+}
+
+
+void UpdateStepInfoByRoomId(std::string room_id, MoveRecord* mr){
+
+
+  Loggerln<std::string>("getting step info for room: " + room_id);
+
+
+  RoomStatus* rs = &ROOM_CLOSED_STATUS[room_id];
+
+  MoveHistory* mv_hist = rs->mutable_move_history();
+
+  int mv_hist_length = mv_hist->move_history_size();
+
+
+  int new_step;
+
+  if(mv_hist_length == 0){
+
+    Loggerln<std::string>("move history is 0, opening");
+
+    new_step = 0;
+
+    mr->set_step(new_step);
+
+  } else {
+
+    Loggerln<std::string>("updating last move");
+
+    int last_step = rs->move_last().step();
+
+    new_step = last_step + 1;
+
+    mr->set_step(new_step);
+  }
+
+  *rs->mutable_move_last() = *mr;
+
+  Loggerln<std::string>("append to move history: " + std::to_string(mv_hist_length));
+
+  MoveRecord* new_mv_record = mv_hist->add_move_history();
+
+  new_mv_record->set_step(new_step);
+
+  new_mv_record->set_id(mr->id());
+
+  new_mv_record->set_to(mr->to());
+
+  *new_mv_record->mutable_result() = *mr->mutable_result();
+
+  mv_hist_length = mv_hist->move_history_size();
+
+  Loggerln<std::string>("successfully appended to move history: " + std::to_string(mv_hist_length));
+
+  return;
+}
+
+
+TALK WatchChessMove(int* is_white, Move* req_mv, MoveRecord* watch_mr_res, MoveResult* watch_mv_result){
+
 
   TALK ret_status;
 
+  std::string room_id;
+
+  room_id = req_mv->room_id();
+
+  int is_white_piece = *is_white;
+
+  int is_last_white = 0;
+
+  RoomStatus* rs = &ROOM_CLOSED_STATUS[room_id];
+
+  MoveRecord* mv_last = rs->mutable_move_last();
+
+  int step_num = mv_last->step();
+
+  PIECES piece_id = mv_last->id();
+
+  std::string move_to = mv_last->to();
+
+  MoveResult* mv_result = mv_last->mutable_result();
+
+  bool success_stat = mv_result->success();
+
+  TALK code_stat = mv_result->code();
+
+  std::string last_time_stamp = mv_result->resolve_time_stamp();
 
 
+  if(piece_id < 15){
+    
+    is_last_white = 1;
 
+  } else {
+
+    is_last_white = 0;
+
+  }
+
+  if(
+    (is_white_piece == 1 && is_last_white == 1)
+    || (is_white_piece == 0 && is_last_white == 0)){
+
+    // wait and check for timeout and everything else
+
+    ret_status = TALK::WATCH;
+
+  } else if (
+    (is_white_piece == 1 && is_last_white == 0)
+    || (is_white_piece == 0 && is_last_white == 1)){
+
+    watch_mv_result->set_success(success_stat);
+
+    watch_mv_result->set_code(code_stat);
+
+    watch_mv_result->set_resolve_time_stamp(last_time_stamp);
+
+    *watch_mr_res->mutable_result() = *watch_mv_result;
+
+    watch_mr_res->set_to(move_to);
+
+    watch_mr_res->set_id(piece_id);
+
+    watch_mr_res->set_step(step_num);
+  
+
+    ret_status = TALK::TURN;
+
+  }
 
 
   return ret_status;
