@@ -1,3 +1,3 @@
 # milti-terminal-games
 
-only an idiot would wanna play gRPC based terminal chess & pinball alike with multiplayer funtionality
+only an idiot would wanna play gRPC based terminal chess & pinball alike with multiplayer functionality
