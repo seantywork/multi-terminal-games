@@ -8,4 +8,4 @@ sample_then
 *.key
 *.pub
 chess_client
-chses_server
+chess_server
