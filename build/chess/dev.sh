@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -r dev 
+
 mkdir -p dev
 
 cd dev
@@ -10,3 +12,7 @@ cmake   -DCMAKE_PREFIX_PATH=$MY_GRPC_DIR \
         ..
 
 make -j 4
+
+cd ../
+
+./certgen.sh

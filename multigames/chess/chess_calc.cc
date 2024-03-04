@@ -72,6 +72,11 @@ TALK ChessMove(int* is_white, Move* req_mv, MoveRecord* mr_res, MoveResult* mv_r
 
   Game* gm = &ROOM_GAME[room_id];
 
+  /*
+  TODO:
+    calculate actual move on the board using the engine
+  */
+
   Loggerln<std::string>("exiting game class for: " + room_id);  
 
   mv_result->set_success(true);

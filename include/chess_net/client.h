@@ -18,6 +18,8 @@
 
 #include "chess.v1.grpc.pb.h"
 
+#define MAX_CMDLINE_LEN 1024
+
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::ClientReader;
@@ -41,6 +43,8 @@ using gmchess::MoveResult;
 using gmchess::MoveHistory;
 
 std::string GetStringTimeNow();
+
+
 
 template <typename T> void Loggerln(T msg){
 

@@ -186,7 +186,7 @@ class GameChessServiceImpl final: public GameChess::Service{
 
         move_accepted = ChessMove(&is_white, &req_mv, &mr_res, &mv_result);
 
-        SERVER_MTX.lock();
+        SERVER_MTX.unlock();
 
         if(move_accepted != TALK::OKAY){
 
