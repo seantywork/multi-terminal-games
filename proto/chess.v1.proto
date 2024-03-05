@@ -10,7 +10,11 @@ service GameChess {
 
   rpc MakeMoveThenGet(Move) returns (stream MoveRecord);
 
-  rpc GetMoveHistory(Void) returns (MoveHistory);
+  rpc MakeMoveThenFree(Move) returns (MoveRecord);
+
+  rpc GetMoveRecord(Get) returns (stream MoveRecord);
+
+  rpc GetMoveHistory(Get) returns (MoveHistory);
 
   rpc Leave(GG) returns (Report);
 
@@ -128,6 +132,13 @@ message RoomStatus{
 
 
 message Void {}
+
+message Get {
+  string room_id = 1;
+  string key = 2;
+  
+}
+  
 
 message Move {
   string room_id = 1;

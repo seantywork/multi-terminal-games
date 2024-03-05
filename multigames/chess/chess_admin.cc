@@ -247,7 +247,7 @@ int MatchFinder(const Room* req_r, RoomResult* ret_rr){
 
 
 
-TALK AuthIncomingRequest(Move* req_mv){
+TALK AuthIncomingMoveRequest(Move* req_mv){
 
 
     TALK ret_stat;
@@ -261,7 +261,7 @@ TALK AuthIncomingRequest(Move* req_mv){
 
     if(auth_flag < 0){
 
-        Loggerln<std::string>("authentication failure: " + std::to_string(auth_flag)); 
+        Loggerln<std::string>("move authentication failure: " + std::to_string(auth_flag)); 
 
         ret_stat = TALK::EAUTH;
 
@@ -269,7 +269,7 @@ TALK AuthIncomingRequest(Move* req_mv){
 
     }
     
-    Loggerln<std::string>("authentication success: " + std::to_string(auth_flag));
+    Loggerln<std::string>("move authentication success: " + std::to_string(auth_flag));
 
     ret_stat = TALK::AUTH;
 
@@ -277,6 +277,36 @@ TALK AuthIncomingRequest(Move* req_mv){
     return ret_stat;
 }
 
+
+
+TALK AuthIncomingGetRequest(Get* req_get){
+
+
+    TALK ret_stat;
+
+    std::string room_id = req_get->room_id();
+
+    std::string key = req_get->key();
+
+    int auth_flag = AuthCheckIfValidRoomKey(room_id, key);
+
+    if(auth_flag < 0){
+
+        Loggerln<std::string>("get authentication failure: " + std::to_string(auth_flag)); 
+
+        ret_stat = TALK::EAUTH;
+
+        return ret_stat;
+
+    }
+    
+    Loggerln<std::string>("get authentication success: " + std::to_string(auth_flag));
+
+    ret_stat = TALK::AUTH;
+
+
+    return ret_stat;
+}
 
 
 int AuthCheckIfValidRoomKey(std::string room_id, std::string key){

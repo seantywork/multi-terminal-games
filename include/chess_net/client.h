@@ -37,6 +37,7 @@ using gmchess::RoomResult;
 
 using gmchess::Void;
 
+using gmchess::Get;
 using gmchess::Move;
 using gmchess::MoveRecord;
 using gmchess::MoveResult;

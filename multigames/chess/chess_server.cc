@@ -159,7 +159,7 @@ class GameChessServiceImpl final: public GameChess::Service{
 
         int is_white = 0;
 
-        authenticated = AuthIncomingRequest(&req_mv);
+        authenticated = AuthIncomingMoveRequest(&req_mv);
 
         if(authenticated != TALK::AUTH){
 
@@ -270,6 +270,223 @@ class GameChessServiceImpl final: public GameChess::Service{
         }
 
         return Status::OK;
+    }
+
+    Status MakeMoveThenFree(ServerContext* context, const Move* request,
+                    MoveRecord* reply) override {
+
+        Move req_mv = *request;
+
+        MoveResult mv_result;
+
+        TALK authenticated;
+
+        TALK move_accepted;
+
+        int is_white = 0;
+
+        authenticated = AuthIncomingMoveRequest(&req_mv);
+
+        if(authenticated != TALK::AUTH){
+
+          mv_result.set_success(false);
+
+          mv_result.set_code(authenticated);
+
+          std::string time_stamp_str = GetStringTimeNow();
+
+          mv_result.set_resolve_time_stamp(time_stamp_str);
+
+          *reply->mutable_result() = mv_result;
+
+          Loggerln<std::string>("client authentication failed: " + std::to_string(authenticated));
+
+          return Status::CANCELLED;
+          
+        }
+        
+
+        SERVER_MTX.lock();
+
+        move_accepted = ChessMove(&is_white, &req_mv, reply, &mv_result);
+
+        SERVER_MTX.unlock();
+
+        if(move_accepted != TALK::OKAY){
+
+          Loggerln<std::string>("chess move not accepted: " + std::to_string(move_accepted));
+
+          return Status::CANCELLED;
+
+        }
+
+
+        Loggerln<std::string>("chess move acceptd: field updated");
+
+        Loggerln<std::string>("handing over turn to the opponent without stream");
+
+        return Status::OK;
+
+    }
+
+
+    Status GetMoveRecord(ServerContext* context, const Get* request,
+                    ServerWriter<MoveRecord>* reply_writer) {
+
+
+        Get req_get = *request;
+
+        MoveRecord mr_res;
+
+        MoveResult mv_result;
+
+        TALK authenticated;
+
+        TALK get_accepted;
+
+        int is_white = 0;
+
+        authenticated = AuthIncomingGetRequest(&req_get);
+
+        if(authenticated != TALK::AUTH){
+
+          mv_result.set_success(false);
+
+          mv_result.set_code(authenticated);
+
+          std::string time_stamp_str = GetStringTimeNow();
+
+          mv_result.set_resolve_time_stamp(time_stamp_str);
+
+          *mr_res.mutable_result() = mv_result;
+
+          reply_writer->Write(mr_res);
+
+          Loggerln<std::string>("get client authentication failed: " + std::to_string(authenticated));
+
+          return Status::CANCELLED;
+          
+        }
+      
+
+        get_accepted = ChessGet(&is_white, &req_get);
+
+
+        if(get_accepted != TALK::OKAY){
+
+          reply_writer->Write(mr_res);
+
+          Loggerln<std::string>("chess get not accepted: " + std::to_string(get_accepted));
+
+          return Status::CANCELLED;
+
+        }
+
+        Loggerln<std::string>("streaming get status");
+
+        TALK judge;
+
+        for(;;){
+          
+          int hit = 0;
+
+          MoveRecord watch_mr_res;
+          MoveResult watch_mv_result;
+          
+          judge = WatchChessGet(&is_white, &req_get, &watch_mr_res, &watch_mv_result);
+
+          switch(judge){
+
+            case TALK::WATCH:
+
+              reply_writer->Write(mr_res);
+
+              break;
+
+            case TALK::TURN:
+
+              hit = 1;
+
+              reply_writer->Write(watch_mr_res);
+
+              break;
+
+            case TALK::ETIMEOUT:
+
+              hit = -1;
+
+              reply_writer->Write(watch_mr_res);
+
+              break;
+
+            case TALK::EABORT:
+
+              hit = -1;
+
+              reply_writer->Write(watch_mr_res);
+
+              break;
+            
+            default:
+
+              hit = -1;
+
+              reply_writer->Write(watch_mr_res);
+
+              break;
+
+          }
+
+          if(hit == 1){
+
+            break;
+
+          } else if(hit == -1){
+
+            return Status::CANCELLED;
+
+          }
+
+        }
+
+          
+
+        return Status::OK;
+    }
+
+    Status GetMoveHistory(ServerContext* context, const Get* request,
+                    MoveHistory* reply) override {
+
+        Get req_get = *request;
+
+        TALK authenticated;
+
+        int status = 0;
+
+        authenticated = AuthIncomingGetRequest(&req_get);
+
+        if(authenticated != TALK::AUTH){
+
+          Loggerln<std::string>("get mhist: client authentication failed: " + std::to_string(authenticated));
+
+          return Status::CANCELLED;
+          
+        }
+
+        std::string room_id = req_get.room_id();
+
+        status = FillMoveHistoryByRoomId(room_id, reply);
+
+        if(status < 0){
+
+          return Status::CANCELLED;
+
+        }
+
+
+        return Status::OK;
+        
+
     }
 
 

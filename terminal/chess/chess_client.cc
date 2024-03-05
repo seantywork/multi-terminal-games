@@ -206,6 +206,93 @@ public:
   }
 
 
+  int GetMoveRecord(std::string key, std::string room_id){
+
+    int get_mv_rec_result = 0;
+
+    Get request;
+
+    request.set_key(key);
+
+    request.set_room_id(room_id);
+
+    ClientContext context;
+
+    MoveRecord reply_written;
+
+    std::unique_ptr<ClientReader<MoveRecord>> reader(
+      stub_->GetMoveRecord(&context, request)
+    );
+
+    std::cout << "getting move record *** " << std::endl;
+
+    while(reader->Read(&reply_written)){ 
+      continue;
+    }
+
+    std::cout << "received message *** " << std::endl;
+    
+    std::cout << "step: " << reply_written.step() << std::endl;
+
+    std::cout << "id: " << reply_written.id() << std::endl;
+
+    std::cout << "to: " << reply_written.to() << std::endl;
+
+    MoveResult* mv_res = reply_written.mutable_result();
+
+    std::cout << "success: " << mv_res->success() << std::endl;
+
+    std::cout << "code : " << mv_res->code() << std::endl;
+
+    std::cout << "resolve time stamp: " << mv_res->resolve_time_stamp() << std::endl;
+
+    Status status = reader->Finish();
+
+    if(status.ok()){
+      get_mv_rec_result = 1;
+      Loggerln<std::string>("got move record");
+    } else{
+      Loggerln<std::string>("failed to get record");
+    }
+
+
+    return get_mv_rec_result;
+  }
+
+
+  int GetMoveHistory(std::string key, std::string room_id, MoveHistory* mhist){
+
+    int get_mhist_result = 0;
+
+    Get request;
+
+    request.set_key(key);
+
+    request.set_room_id(room_id);
+
+
+    ClientContext context;
+
+    Status status = stub_->GetMoveHistory(&context, request, mhist);
+
+
+    if(status.ok()){
+
+      get_mhist_result = 1;
+
+    } else {
+
+      get_mhist_result = -1;
+
+    }
+
+
+
+
+    return get_mhist_result;
+  }
+
+
 private:
 
   std::unique_ptr<GameChess::Stub> stub_;
@@ -281,6 +368,10 @@ int main (int argc, char** argv){
 
   int ret_code = 0;
 
+
+  // TODO:
+  //   add resume
+
   if(target == "post"){
 
     ret_code = gcc.PostRoom(room_name, side, 30, 30, &key, &room_id);
@@ -303,6 +394,17 @@ int main (int argc, char** argv){
 
     return -3;
   }
+
+
+  ret_code = gcc.GetMoveRecord(key, room_id);
+
+  if(ret_code < 0){
+
+    std::cout << "failed get move record: " << ret_code << std::endl;
+
+    return -4;
+  }
+
 
   char* delim = " ";
 

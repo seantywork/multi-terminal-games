@@ -102,6 +102,45 @@ TALK ChessMove(int* is_white, Move* req_mv, MoveRecord* mr_res, MoveResult* mv_r
 }
 
 
+TALK ChessGet(int* is_white, Get* req_get){
+
+
+  TALK ret_status;
+
+  std::string room_id;
+
+  std::string key;
+
+  room_id = req_get->room_id();
+
+  key = req_get->key();
+
+  int is_poster_key = 0;
+
+  int is_white_piece = 0;
+
+  int opening = 0;
+
+  int white_turn = 0;
+
+  
+  int check = GetKeyContextInfoByRoomId(room_id, key, &is_poster_key, &is_white_piece, &opening, &white_turn);
+
+  *is_white = is_white_piece;
+
+  if(check < 0){
+
+    Loggerln<std::string>("failed to get key context by room id: " + std::to_string(check));
+
+    return TALK::ENTOK;
+
+  }
+
+  ret_status = TALK::OKAY;
+
+  return ret_status;
+}
+
 
 
 int GetKeyContextInfoByRoomId(std::string room_id, std::string key, int* is_poster, int* is_white, int* opening, int* white_turn){
@@ -333,6 +372,148 @@ TALK WatchChessMove(int* is_white, Move* req_mv, MoveRecord* watch_mr_res, MoveR
 }
 
 
+TALK WatchChessGet(int* is_white, Get* req_get, MoveRecord* watch_mr_res, MoveResult* watch_mv_result){
+
+
+  TALK ret_status;
+
+  std::string room_id;
+
+  room_id = req_get->room_id();
+
+  int is_white_piece = *is_white;
+
+  int is_last_white = 0;
+
+  RoomStatus* rs = &ROOM_CLOSED_STATUS[room_id];
+
+  MoveRecord* mv_last = rs->mutable_move_last();
+
+  int step_num = mv_last->step();
+
+  PIECES piece_id = mv_last->id();
+
+  std::string move_to = mv_last->to();
+
+  MoveResult* mv_result = mv_last->mutable_result();
+
+  bool success_stat = mv_result->success();
+
+  TALK code_stat = mv_result->code();
+
+  std::string last_time_stamp = mv_result->resolve_time_stamp();
+
+  MoveHistory* mv_hist = rs->mutable_move_history();
+
+  int mv_hist_size = mv_hist->move_history_size();
+
+  if(mv_hist_size == 0){
+
+    is_last_white = 0;
+
+  } else {
+
+    if(piece_id < 15){
+    
+        is_last_white = 1;
+
+    } else {
+
+        is_last_white = 0;
+
+    }
+  }
+
+
+  if(
+    (is_white_piece == 1 && is_last_white == 1)
+    || (is_white_piece == 0 && is_last_white == 0)){
+
+    // wait and check for timeout and everything else
+
+    ret_status = TALK::WATCH;
+
+  } else if (
+    (is_white_piece == 1 && is_last_white == 0)
+    || (is_white_piece == 0 && is_last_white == 1)){
+
+    watch_mv_result->set_success(success_stat);
+
+    watch_mv_result->set_code(code_stat);
+
+    watch_mv_result->set_resolve_time_stamp(last_time_stamp);
+
+    *watch_mr_res->mutable_result() = *watch_mv_result;
+
+    watch_mr_res->set_to(move_to);
+
+    watch_mr_res->set_id(piece_id);
+
+    watch_mr_res->set_step(step_num);
+  
+
+    ret_status = TALK::TURN;
+
+  }
+
+
+  return ret_status;
+
+}
+
+
+int FillMoveHistoryByRoomId(std::string room_id, MoveHistory* mhist){
+
+
+  int ret_status = 0;
+
+  if(ROOM_CLOSED_STATUS.find(room_id) == ROOM_CLOSED_STATUS.end()){
+
+    Loggerln<std::string>("fill mhist: couldn't find room lock status for room id: " + room_id);
+
+    return -1;
+
+  }
+
+  RoomStatus* rs = &ROOM_CLOSED_STATUS[room_id];
+
+  MoveHistory* rs_mhist = rs->mutable_move_history();
+
+  int rs_mhist_size = rs_mhist->move_history_size();
+
+  for(int i = 0 ; i < rs_mhist_size; i++){
+
+    MoveRecord* mv_rec = mhist->add_move_history();
+
+    MoveRecord* rs_mhist_mv_rec = rs_mhist->mutable_move_history(i);
+
+    mv_rec->set_step(rs_mhist_mv_rec->step());
+
+    mv_rec->set_id(rs_mhist_mv_rec->id());
+
+    mv_rec->set_to(rs_mhist_mv_rec->to());
+
+    MoveResult* mv_res;
+
+    MoveResult* rs_mhist_mv_res = rs_mhist_mv_rec->mutable_result();
+
+    mv_res->set_success(rs_mhist_mv_res->success());
+
+    mv_res->set_code(rs_mhist_mv_res->code());
+
+    mv_res->set_resolve_time_stamp(rs_mhist_mv_res->resolve_time_stamp());
+
+    *mv_rec->mutable_result() = *mv_res;
+
+
+  }
+
+  ret_status = 0;
+
+
+  return ret_status;
+
+}
 
 void PrintReqMove(Move* mv){
 
